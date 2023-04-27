@@ -52,11 +52,11 @@ set(JERRY_LIBS
 add_custom_command(OUTPUT ${JERRY_LIBS}
   DEPENDS ${KALUMA_GENERATED_C} ${KALUMA_MODULE_SRC}
   WORKING_DIRECTORY ${JERRY_ROOT}
-  COMMAND python tools/build.py --clean ${JERRY_ARGS})
+  COMMAND python3 tools/build.py --clean ${JERRY_ARGS})
 
 add_custom_command(OUTPUT ${KALUMA_GENERATED_C}
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMAND python ${JERRY_ROOT}/tools/build.py --clean --jerry-cmdline-snapshot=ON --snapshot-save=ON --snapshot-exec=ON --profile=es.next #es2015-subset
+  COMMAND python3 ${JERRY_ROOT}/tools/build.py --clean --jerry-cmdline-snapshot=ON --snapshot-save=ON --snapshot-exec=ON --profile=es.next #es2015-subset
   COMMAND node tools/js2c.js --modules=${MODULE_LIST} --target=${TARGET} --board=${BOARD}
   COMMAND rm -rf lib/jerryscript/build)
 
