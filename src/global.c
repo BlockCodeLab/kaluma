@@ -1093,7 +1093,7 @@ JERRYXX_FUN(textdecoder_decode_fn) {
       jerry_value_t buffer =
           jerry_get_typedarray_buffer(input, &byteOffset, &byteLength);
       uint8_t *buf = jerry_get_arraybuffer_pointer(buffer);
-      jerry_value_t str = jerry_create_string_sz_from_utf8(buf, byteLength);
+      jerry_value_t str = jerry_create_string_sz_from_utf8(buf + byteOffset, byteLength);
       jerry_release_value(buffer);
       return str;
     } else {
@@ -1142,9 +1142,8 @@ JERRYXX_FUN(btoa_fn) {
     jerry_length_t byteOffset = 0;
     jerry_value_t array_buffer =
         jerry_get_typedarray_buffer(binary_data, &byteOffset, &byteLength);
-    size_t len = jerry_get_arraybuffer_byte_length(array_buffer);
     uint8_t *buf = jerry_get_arraybuffer_pointer(array_buffer);
-    encoded_data = km_base64_encode(buf, len, &encoded_data_sz);
+    encoded_data = km_base64_encode(buf + byteOffset, byteLength, &encoded_data_sz);
     jerry_release_value(array_buffer);
   } else if (jerry_value_is_string(binary_data)) { /* for string */
     jerry_size_t len = jerryxx_get_ascii_string_size(binary_data);
@@ -1354,6 +1353,7 @@ static void run_board_module() {
   jerry_value_t exports = jerry_create_object();
   jerry_value_t module = jerry_create_object();
   jerry_value_t args[3] = {exports, require, module};
+  jerryxx_set_property_string(global, MSTR_UID, km_getuid());
   jerry_value_t ret_val = jerry_call_function(board_js, this_val, args, 3);
   if (jerry_value_is_error(ret_val)) {
     // print error

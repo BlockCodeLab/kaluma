@@ -19,8 +19,11 @@
  * SOFTWARE.
  */
 
-#include "jerryscript.h"
+#ifndef __WDT_MAGIC_STRINGS_H
+#define __WDT_MAGIC_STRINGS_H
 
-jerry_value_t module_pico_cyw43_init();
-void km_cyw43_deinit();
-void km_cyw43_infinite_loop();
+#define MSTR_WDT_WDT "WDT"
+#define MSTR_WDT_FEED "feed"
+#define MSTR_WDT_TIMEOUT "timeout"
+
+#endif /* __WDT_MAGIC_STRINGS_H */

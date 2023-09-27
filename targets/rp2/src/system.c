@@ -34,6 +34,7 @@
 #include "i2c.h"
 #include "io.h"
 #include "pico/stdlib.h"
+#include "pico/unique_id.h"
 #include "pwm.h"
 #include "rtc.h"
 #include "spi.h"
@@ -42,8 +43,10 @@
 #include "uart.h"
 #ifdef PICO_CYW43
 #include "module_pico_cyw43.h"
-#include "pico/cyw43_arch.h"
+#include <pico/cyw43_arch.h>
 #endif /* PICO_CYW43 */
+
+static char serial[2 * PICO_UNIQUE_BOARD_ID_SIZE_BYTES + 1];
 
 /**
  * Delay in milliseconds
@@ -56,6 +59,13 @@ void km_delay(uint32_t msec) { sleep_ms(msec); }
 uint64_t km_gettime() { return to_ms_since_boot(get_absolute_time()); }
 
 /**
+ * Return uid of device
+ */
+char *km_getuid() {
+  return serial;
+}
+
+/**
  * Return MAX of the microsecond counter 44739242
  */
 uint64_t km_micro_maxtime() {
@@ -65,17 +75,27 @@ uint64_t km_micro_maxtime() {
 /**
  * Return microsecond counter
  */
+#ifdef NDEBUG
 uint64_t km_micro_gettime() { return get_absolute_time(); }
+#else
+uint64_t km_micro_gettime() { return get_absolute_time()._private_us_since_boot; }
+#endif
 
 /**
  * microsecond delay
  */
 void km_micro_delay(uint32_t usec) { sleep_us(usec); }
 
-static void rp2_pio_init() {
+static void km_uid_init() {
+  pico_get_unique_board_id_string(serial, sizeof(serial));
+}
+
+static void km_pio_init() {
   for (int i = 0; i < PIO_SM_NUM; i++) {
-    pio_sm_unclaim(pio0, i);
-    pio_sm_unclaim(pio1, i);
+    if (pio_sm_is_claimed(pio0, i))
+      pio_sm_unclaim(pio0, i);
+    if (pio_sm_is_claimed(pio1, i))
+      pio_sm_unclaim(pio1, i);
   }
   pio_clear_instruction_memory(pio0);
   pio_clear_instruction_memory(pio1);
@@ -85,8 +105,9 @@ static void rp2_pio_init() {
  * Kaluma Hardware System Initializations
  */
 void km_system_init() {
-  rp2_pio_init();
   stdio_init_all();
+  km_uid_init();
+  km_pio_init();
   km_gpio_init();
   km_adc_init();
   km_pwm_init();
@@ -100,8 +121,7 @@ void km_system_init() {
 void km_system_cleanup() {
 #ifdef PICO_CYW43
   km_cyw43_deinit();
-#endif /* PICO_CYW43 */
-  rp2_pio_init();
+#endif
   km_adc_cleanup();
   km_pwm_cleanup();
   km_i2c_cleanup();
@@ -122,6 +142,6 @@ uint8_t km_running_script_check() {
 
 void km_custom_infinite_loop() {
 #ifdef PICO_CYW43
-  cyw43_arch_poll();
-#endif /* PICO_CYW43 */
+  km_cyw43_infinite_loop();
+#endif
 }
